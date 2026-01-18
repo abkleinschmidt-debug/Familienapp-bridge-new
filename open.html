@@ -3,10 +3,84 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bridge Test</title>
+  <title>Familien-App – Notiz öffnen</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; margin:24px; line-height:1.35;}
+    .card{max-width:760px; border:1px solid #ddd; border-radius:14px; padding:18px;}
+    h1{font-size:18px; margin:0 0 10px;}
+    .muted{color:#555; font-size:14px;}
+    .btn{
+      display:inline-block; margin-top:14px; padding:14px 16px;
+      border:1px solid #111; border-radius:12px; text-decoration:none; color:#111;
+      font-weight:700;
+    }
+    .btn:active{transform:scale(0.99)}
+    code{background:#f6f6f6; padding:2px 6px; border-radius:6px;}
+    .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;}
+    .btn2{
+      display:inline-block; padding:12px 14px; border:1px solid #bbb; border-radius:12px;
+      text-decoration:none; color:#111; font-weight:600;
+    }
+  </style>
 </head>
 <body>
-  <h1>Bridge OK ✅</h1>
-  <p>Wenn du das gerendert siehst (nicht als Code), stimmt GitHub Pages.</p>
+  <div class="card">
+    <h1>Notiz öffnen</h1>
+    <div class="muted" id="info">Lade…</div>
+
+    <div class="row">
+      <a class="btn" id="openBtn" href="#">Kurzbefehle öffnen</a>
+      <a class="btn2" id="copyBtn" href="#">Titel kopieren</a>
+    </div>
+
+    <p class="muted" style="margin-top:14px;">
+      Hinweis: iOS/Safari verlangt meist einen Tap. Beim ersten Mal kann eine Bestätigung erscheinen („Kurzbefehle öffnen“).
+    </p>
+  </div>
+
+  <script>
+    // Erwartet: ?text=...   (URL-encoded oder normal)
+    const params = new URLSearchParams(location.search);
+    const raw = params.get("text") || "";
+    const title = raw ? decodeURIComponent(raw) : "";
+
+    const info = document.getElementById("info");
+    const openBtn = document.getElementById("openBtn");
+    const copyBtn = document.getElementById("copyBtn");
+
+    if (!title) {
+      info.innerHTML = "Fehlender Parameter. Beispiel:<br><code>?text=%F0%9F%8D%B3%20Archiv%20-%20Schnelle%20K%C3%BCche</code>";
+      openBtn.style.opacity = "0.4";
+      openBtn.onclick = (e) => { e.preventDefault(); alert("Kein Titel übergeben."); };
+      copyBtn.onclick = (e) => { e.preventDefault(); alert("Kein Titel vorhanden."); };
+    } else {
+      info.innerHTML = "Ziel-Notiz: <code>" + title + "</code>";
+
+      // Shortcut-Name (muss exakt so heißen wie dein Kurzbefehl in Kurzbefehle)
+      const shortcutNameEncoded = "Notiz%20%C3%96ffnen";
+
+      // text muss URL-encoded sein:
+      const encodedTitle = encodeURIComponent(title);
+
+      openBtn.href = "shortcuts://run-shortcut?name=" + shortcutNameEncoded + "&input=text&text=" + encodedTitle;
+
+      copyBtn.onclick = async (e) => {
+        e.preventDefault();
+        try {
+          await navigator.clipboard.writeText(title);
+          alert("Kopiert: " + title);
+        } catch {
+          // Fallback
+          const ta = document.createElement("textarea");
+          ta.value = title;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          alert("Kopiert: " + title);
+        }
+      };
+    }
+  </script>
 </body>
 </html>
